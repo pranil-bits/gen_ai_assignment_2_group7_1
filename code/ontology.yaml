@@ -1,0 +1,27 @@
+metadata_fields:
+  doc_id: stable filename stem
+  title: human-readable document title
+  tool: [snowflake, azure, zenlytic, cross_stack]
+  doc_type: [docs_page, deck, ebook, whitepaper, blog, guide]
+  topic:
+    - cost
+    - security_identity
+    - governance
+    - ingestion
+    - architecture
+    - semantic_layer
+    - ai_ml
+    - performance
+    - data_sharing
+    - industry_use_case
+    - general
+  year: 2015-2026 or 0
+  modality: [text, table, image]
+  page: 1-based document page or slide
+  source_url: public URL from report.csv
+  sensitivity: public
+  table_id: stable table identifier or empty
+filters:
+  corpus_scope: sensitivity == public
+  modality_routing: modality in requested modalities
+  cross_tool: tool in snowflake, azure, cross_stack

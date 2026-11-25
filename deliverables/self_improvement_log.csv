@@ -1,0 +1,5 @@
+iteration,prompt_score,status,change_made,prompt_summary
+0,,planned,"initial_prompt","Baseline: answer with evidence and include document/page citations."
+1,,not_run,"add_modality_routing","Plan: route text/table/image evidence and reject unsupported answers."
+2,,not_run,"add_three_shot_examples","Plan: add examples for tables, images, and insufficient evidence."
+3,,not_run,"add_citation_and_refusal_contract","Plan: require source citations and refuse when evidence is absent."

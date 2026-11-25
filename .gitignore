@@ -1,0 +1,9 @@
+.venv/
+__pycache__/
+.ipynb_checkpoints/
+*.py[cod]
+.env
+corpus/pilot_out/chroma/
+corpus/pilot_out/*.jsonl
+corpus/pilot_out/*.json
+corpus/pilot_out/*.csv

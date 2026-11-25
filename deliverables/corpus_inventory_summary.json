@@ -1,0 +1,11 @@
+{
+  "distinct_documents": 101,
+  "documents_by_format": {
+    "pdf": 81,
+    "pptx": 20
+  },
+  "pages_or_slides": 1380,
+  "tables": 130,
+  "images": 1061,
+  "parse_errors": 0
+}
