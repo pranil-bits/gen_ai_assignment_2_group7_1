@@ -1,6 +1,6 @@
 prompt_variant,model,questions,answer_keyword_recall,context_keyword_precision,average_input_tokens,average_output_tokens,p50_latency_seconds,p95_latency_seconds,generation
-zero_shot,Qwen/Qwen2.5-0.5B-Instruct,1,0.2727,0.625,2009.0,22.0,10.5983,10.5983,greedy (do_sample=False)
-f_string,Qwen/Qwen2.5-0.5B-Instruct,1,0.3636,0.5,2012.0,24.0,176.7629,176.7629,greedy (do_sample=False)
-three_shot,Qwen/Qwen2.5-0.5B-Instruct,1,0.6364,0.3947,2051.0,158.0,27.3677,27.3677,greedy (do_sample=False)
-jinja2,Qwen/Qwen2.5-0.5B-Instruct,1,0.1818,0.6875,2009.0,22.0,18.6133,18.6133,greedy (do_sample=False)
-react_or_create,Qwen/Qwen2.5-0.5B-Instruct,1,0.5455,0.2655,2046.0,256.0,64.6224,64.6224,greedy (do_sample=False)
+zero_shot,Qwen/Qwen2.5-0.5B-Instruct,30,0.3084,0.3728,1075.5,248.1,17.9014,41.6473,greedy (do_sample=False)
+f_string,Qwen/Qwen2.5-0.5B-Instruct,30,0.2845,0.3379,1078.1,244.1,20.3912,43.0232,greedy (do_sample=False)
+three_shot,Qwen/Qwen2.5-0.5B-Instruct,30,0.2938,0.3473,1117.1,293.6,27.5105,47.7613,greedy (do_sample=False)
+jinja2,Qwen/Qwen2.5-0.5B-Instruct,30,0.2558,0.3128,1075.1,189.5,12.9944,45.0841,greedy (do_sample=False)
+react_or_create,Qwen/Qwen2.5-0.5B-Instruct,30,0.3215,0.2547,1112.5,262.4,20.0139,51.158,greedy (do_sample=False)

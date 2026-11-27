@@ -2,5 +2,9 @@ case,blocked,expected,reason
 safe question,False,False,
 injection,True,True,prompt_injection
 personal data,True,True,personal_data
+password request,True,True,personal_data
+aadhaar request,True,True,personal_data
+credit card request,True,True,personal_data
 too long,True,True,query_too_long
 empty,True,True,empty_or_trivial
+trivial,True,True,empty_or_trivial

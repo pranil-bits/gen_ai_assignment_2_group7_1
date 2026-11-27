@@ -6,6 +6,7 @@ Run:  python code/pilot_ingestion.py   (from the assignment2 folder, or from any
 import os, re, io, csv, json, time, random
 from pathlib import Path
 from collections import Counter
+from part_a_utils import chunk_text
 INGEST_ALL = os.environ.get("PART_A_INGEST_ALL", "0") == "1"
 
 # Finds the corpus folder whether you run from assignment2 or from assignment2/code
@@ -92,28 +93,6 @@ def pretty_title(stem):
     return re.sub(r"\s+", " ", s).strip()
 
 # ---- text chunking (page-level so every chunk has a page for citation) ----
-def chunk_text(text, size=CHUNK_WORDS, overlap=OVERLAP_WORDS):
-    paras = [re.sub(r"\s+", " ", p).strip() for p in re.split(r"\n\s*\n", text)]
-    units = []
-    for p in (p for p in paras if p):
-        w = p.split()
-        if len(w) <= size:
-            units.append(p)
-        else:
-            units += [" ".join(w[k:k + size]) for k in range(0, len(w), size)]
-    chunks, cur, n = [], [], 0
-    for u in units:
-        c = len(u.split())
-        if cur and n + c > size:
-            chunks.append(" ".join(cur)); cur, n = [], 0
-        cur.append(u); n += c
-    if cur:
-        chunks.append(" ".join(cur))
-    if overlap and len(chunks) > 1:
-        chunks = [chunks[0]] + [" ".join(chunks[j - 1].split()[-overlap:]) + " " + chunks[j]
-                                for j in range(1, len(chunks))]
-    return [c for c in chunks if len(c.split()) >= 12]
-
 # ---- tables: markdown copy (stored) + short summary (searched) ----
 def clean_rows(rows):
     rows = [[("" if c is None else re.sub(r"\s+", " ", str(c)).strip()) for c in r] for r in rows]
@@ -200,8 +179,25 @@ else:
 print("OCR engine:", OCR_NAME)
 
 def caption_image(img_bytes):
-    """TODO later: short caption for diagrams/charts with a small vision model (e.g. Qwen2.5-VL).
-    Returns empty string in the pilot."""
+    model_name = os.environ.get("PART_A_IMAGE_CAPTION_MODEL", "").strip()
+    if not model_name:
+        return ""
+    try:
+        from PIL import Image
+        from transformers import pipeline
+
+        if "image_captioner" not in globals():
+            globals()["image_captioner"] = pipeline(
+                "image-to-text",
+                model=model_name,
+                device=-1,
+            )
+        image = Image.open(io.BytesIO(img_bytes)).convert("RGB")
+        result = globals()["image_captioner"](image)
+        if isinstance(result, list) and result:
+            return str(result[0].get("generated_text", "")).strip()
+    except Exception as exc:
+        print(f"Image caption fallback unavailable: {type(exc).__name__}: {exc}")
     return ""
 
 # ======== parsers ========

@@ -6,7 +6,12 @@ import chromadb
 from sentence_transformers import SentenceTransformer
 
 from conversation_memory import ConversationMemory
-from part_a_evaluate import reject_query
+from part_a_utils import (
+    add_source_citations,
+    classify_modality,
+    format_collection_error,
+    reject_query,
+)
 from prompts import VARIANTS, render
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -20,7 +25,7 @@ SYSTEM_PROMPT = (
 )
 
 
-def search(query, model, collection, k=5):
+def search(query, model, collection, k=5, where=None):
     embedding = model.encode(
         ["Represent this sentence for searching relevant passages: " + query],
         normalize_embeddings=True,
@@ -28,6 +33,7 @@ def search(query, model, collection, k=5):
     result = collection.query(
         query_embeddings=embedding.tolist(),
         n_results=k,
+        where=where,
         include=["documents", "metadatas", "distances"],
     )
     return result
@@ -89,16 +95,6 @@ def generate_answer(prompt, tokenizer, llm, max_new_tokens=256):
     return tokenizer.decode(answer_ids, skip_special_tokens=True).strip()
 
 
-def add_source_citations(answer, evidence):
-    cleaned = answer.strip()
-    if not cleaned:
-        cleaned = "Insufficient evidence to generate an answer."
-    citations = "; ".join(
-        f"[{item['doc_id']}, page {item['page']}]" for item in evidence
-    )
-    return f"{cleaned}\n\nSources: {citations}"
-
-
 def main(argv=None):
     parser = argparse.ArgumentParser(description="Search the document index and optionally generate an answer.")
     parser.add_argument(
@@ -123,8 +119,12 @@ def main(argv=None):
 
     memory = ConversationMemory()
     embedding_model = SentenceTransformer("BAAI/bge-small-en-v1.5")
-    client = chromadb.PersistentClient(path=str(ROOT / "corpus" / "pilot_out" / "chroma"))
-    collection = client.get_collection("pilot")
+    chroma_path = ROOT / "corpus" / "pilot_out" / "chroma"
+    client = chromadb.PersistentClient(path=str(chroma_path))
+    try:
+        collection = client.get_collection("pilot")
+    except Exception as exc:
+        raise RuntimeError(format_collection_error("pilot", chroma_path)) from exc
     llm_tokenizer = llm = None
     if args.mode in ("generate", "both"):
         print(f"Loading open-weight LLM {args.llm_model}")
@@ -141,7 +141,11 @@ def main(argv=None):
         if blocked:
             print("Question blocked:", reason)
             continue
-        result = search(resolved, embedding_model, collection, k=args.top_k)
+        modality = classify_modality(resolved)
+        where = {"modality": modality} if modality != "text" else None
+        result = search(resolved, embedding_model, collection, k=args.top_k, where=where)
+        if not result["documents"][0] and where:
+            result = search(resolved, embedding_model, collection, k=args.top_k)
         documents = result["documents"][0]
         metadata = result["metadatas"][0]
         evidence = [

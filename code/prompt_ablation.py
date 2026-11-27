@@ -17,6 +17,7 @@ from demo_part_a import (
     load_llm,
     search,
 )
+from part_a_utils import classify_modality, format_collection_error, percentile
 from prompts import VARIANTS, render
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -50,12 +51,21 @@ def run(model_name=DEFAULT_LLM_MODEL, limit=None, top_k=5):
 
     tokenizer, llm = load_llm(model_name)
     embedding_model = SentenceTransformer("BAAI/bge-small-en-v1.5")
-    client = chromadb.PersistentClient(path=str(ROOT / "corpus" / "pilot_out" / "chroma"))
-    collection = client.get_collection("pilot")
+    chroma_path = ROOT / "corpus" / "pilot_out" / "chroma"
+    client = chromadb.PersistentClient(path=str(chroma_path))
+    try:
+        collection = client.get_collection("pilot")
+    except Exception as exc:
+        raise RuntimeError(format_collection_error("pilot", chroma_path)) from exc
     results = defaultdict(list)
+    per_case_rows = []
 
     for case_number, case in enumerate(cases, 1):
-        retrieved = search(case["question"], embedding_model, collection, k=top_k)
+        modality = classify_modality(case["question"], default=case["modality"])
+        where = {"modality": modality} if modality in ("table", "image") else None
+        retrieved = search(case["question"], embedding_model, collection, k=top_k, where=where)
+        if not retrieved["documents"][0] and where:
+            retrieved = search(case["question"], embedding_model, collection, k=top_k)
         evidence = [
             {
                 "doc_id": item["doc_id"],
@@ -100,13 +110,30 @@ def run(model_name=DEFAULT_LLM_MODEL, limit=None, top_k=5):
                 "latency_seconds": latency,
                 "answer": answer,
             })
+            per_case_rows.append({
+                "question_id": case["id"],
+                "prompt_variant": variant.name,
+                "answer_keyword_recall": round(
+                    len(expected_words & answer_word_set) / len(expected_words)
+                    if expected_words else 0.0,
+                    4,
+                ),
+                "context_keyword_precision": round(
+                    len(answer_word_set & context_words) / len(answer_word_set)
+                    if answer_word_set else 0.0,
+                    4,
+                ),
+                "input_tokens": input_token_count,
+                "output_tokens": generated_token_count,
+                "latency_seconds": round(latency, 4),
+                "answer": answer,
+            })
         print(f"Evaluated {case_number}/{len(cases)} questions")
 
     summary = []
     for variant in VARIANTS:
         measurements = results[variant.name]
         latencies = sorted(item["latency_seconds"] for item in measurements)
-        p95_index = max(0, min(len(latencies) - 1, int(0.95 * len(latencies)) - 1))
         summary.append({
             "prompt_variant": variant.name,
             "model": model_name,
@@ -124,7 +151,7 @@ def run(model_name=DEFAULT_LLM_MODEL, limit=None, top_k=5):
                 sum(item["output_tokens"] for item in measurements) / len(measurements), 1
             ),
             "p50_latency_seconds": round(latencies[len(latencies) // 2], 4),
-            "p95_latency_seconds": round(latencies[p95_index], 4),
+            "p95_latency_seconds": round(percentile(latencies, 0.95), 4),
             "generation": "greedy (do_sample=False)",
         })
 
@@ -132,6 +159,11 @@ def run(model_name=DEFAULT_LLM_MODEL, limit=None, top_k=5):
         writer = csv.DictWriter(handle, fieldnames=list(summary[0]))
         writer.writeheader()
         writer.writerows(summary)
+    if per_case_rows:
+        with open(OUT / "prompt_ablation_per_case.csv", "w", newline="", encoding="utf-8") as handle:
+            writer = csv.DictWriter(handle, fieldnames=list(per_case_rows[0]))
+            writer.writeheader()
+            writer.writerows(per_case_rows)
     print(f"Saved real LLM prompt comparison to {OUT / 'prompt_ablation.csv'}")
 
 

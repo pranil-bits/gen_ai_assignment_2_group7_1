@@ -5,10 +5,10 @@
     "table": 10,
     "image": 10
   },
-  "recall_at_k": 0.7333,
-  "mrr": 0.5206,
-  "answer_context_coverage": 0.6269,
+  "recall_at_k": 0.3,
+  "mrr": 0.2067,
+  "answer_context_coverage": 0.3724,
   "consistency_top_k_share": 1.0,
-  "retrieval_p50_seconds": 0.0027,
-  "retrieval_p95_seconds": 0.0037
+  "retrieval_p50_seconds": 0.0044,
+  "retrieval_p95_seconds": 0.0061
 }

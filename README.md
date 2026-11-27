@@ -73,6 +73,19 @@ Type a question at the prompt; enter `exit` to quit. The embedding model (BGE) f
 
 The first generation run downloads the LLM from Hugging Face and requires internet access and disk space. It runs locally on CPU by default and may be slow. Choose another compatible causal language model with `--llm-model MODEL_ID_OR_LOCAL_PATH`. Select one of the implemented prompt templates with `--prompt-variant` (`zero_shot`, `f_string`, `three_shot`, `jinja2`, or `react_or_create`). Retrieval-only mode does not load the LLM.
 
+Optional image captioning can be enabled during ingestion with:
+
+```powershell
+$env:PART_A_IMAGE_CAPTION_MODEL = "Salesforce/blip-image-captioning-base"
+python code/pilot_ingestion.py
+```
+
+Run the focused unit tests with:
+
+```powershell
+python -m unittest discover -s tests -v
+```
+
 ### 5. Run retrieval and prompt evaluations
 
 Retrieval evaluation (30-question golden set):
